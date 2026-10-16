@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TravelSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="brand-mark">TS</div>
+    <h2>Welcome to TravelSync</h2>
+    <p class="hint">Log in to search destinations, book hotels and see live bookings.</p>
+
+    <div class="auth-tabs">
+      <button id="auth-tab-login" class="auth-tab active" onclick="setAuthMode('login')">Log in</button>
+      <button id="auth-tab-signup" class="auth-tab" onclick="setAuthMode('signup')">Sign up</button>
+    </div>
+
+    <input id="auth-username" placeholder="Username (letters, numbers, _)">
+    <input id="auth-password" type="password" placeholder="Password (at least 4 characters)">
+    <div id="auth-error" class="auth-error"></div>
+    <button id="auth-submit" class="wide" onclick="submitAuth()">Log in</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">TS</div>
+      <div>
+        <div class="brand-name">TravelSync</div>
+        <div class="brand-sub">Plan. Book. Track.</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">Traveler</div>
+      <button class="tab-btn active" data-tab="explore">
+        <span class="nav-label">Explore &amp; Book</span>
+        <span class="nav-desc">Search · Hotels · Booking</span>
+      </button>
+      <button class="tab-btn" data-tab="trips">
+        <span class="nav-label">My Trips</span>
+        <span class="nav-desc">Your saved bookings</span>
+      </button>
+      <button class="tab-btn" data-tab="feed">
+        <span class="nav-label">Live Feed</span>
+        <span class="nav-desc">Bookings as they happen</span>
+      </button>
+
+      <div class="nav-group">Algorithm Lab</div>
+      <button class="tab-btn" data-tab="m1">
+        <span class="nav-label">Search</span>
+        <span class="nav-desc">KMP · Rabin-Karp</span>
+      </button>
+      <button class="tab-btn" data-tab="m2">
+        <span class="nav-label">Similar Places</span>
+        <span class="nav-desc">Suffix Array · LCP</span>
+      </button>
+      <button class="tab-btn" data-tab="m3">
+        <span class="nav-label">Spell-check & Trip</span>
+        <span class="nav-desc">Edit Distance · Bitmask DP</span>
+      </button>
+      <button class="tab-btn" data-tab="m4">
+        <span class="nav-label">Transport Flow</span>
+        <span class="nav-desc">Max Flow · Matching</span>
+      </button>
+      <button class="tab-btn" data-tab="m5">
+        <span class="nav-label">Travel Constraints</span>
+        <span class="nav-desc">3-SAT · Vertex Cover</span>
+      </button>
+      <button class="tab-btn" data-tab="m6">
+        <span class="nav-label">Booking Analytics</span>
+        <span class="nav-desc">Randomized · Parallel</span>
+      </button>
+    </nav>
+
+    <div class="userbox">
+      <div class="role">Signed in as</div>
+      <div class="who" id="user-name">-</div>
+      <button onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ============ TRAVELER: EXPLORE ============ -->
+    <section id="explore" class="tab-content active">
+      <header class="section-head">
+        <h1>Explore &amp; Book</h1>
+        <p>Search by place, country or hotel name. Small typos are fixed for you.</p>
+      </header>
+      <div class="search-bar">
+        <input id="explore-input" placeholder="Try: beach, temple, India, Sea Breeze...">
+        <button onclick="searchDestinations()">Search</button>
+      </div>
+      <div id="explore-msg" class="notice" hidden></div>
+      <div id="explore-results" class="card-grid"></div>
+    </section>
+
+    <!-- ============ TRAVELER: MY TRIPS ============ -->
+    <section id="trips" class="tab-content">
+      <header class="section-head">
+        <h1>My Trips</h1>
+        <p>Every booking you made. They stay saved even after the server restarts.</p>
+      </header>
+      <div class="panel">
+        <div id="trips-list" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ============ TRAVELER: LIVE FEED ============ -->
+    <section id="feed" class="tab-content">
+      <header class="section-head">
+        <h1>Live Feed</h1>
+        <p>Refreshes by itself every 3 seconds. Open the app in two windows and book in one to watch the other update.</p>
+      </header>
+
+      <div class="stat-row">
+        <div class="stat"><div class="stat-num" id="stat-bookings">0</div><div class="stat-label">Bookings</div></div>
+        <div class="stat"><div class="stat-num" id="stat-nights">0</div><div class="stat-label">Nights booked</div></div>
+        <div class="stat"><div class="stat-num" id="stat-value">0</div><div class="stat-label">Total value</div></div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Bookings by destination <span class="algo">Parallel Reduce</span></h3>
+        <div id="feed-bars"></div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Recent bookings <span class="live-dot">LIVE</span></h3>
+        <div id="feed-recent" class="list"></div>
+      </div>
+
+      <div class="btn-row">
+        <button onclick="simulateBookings()">Add 5 demo bookings</button>
+      </div>
+    </section>
+
+    <!-- ============ ALGORITHM LAB ============ -->
+    <section id="m1" class="tab-content">
+      <header class="section-head">
+        <h1>Search</h1>
+        <p>Find destinations by keyword, or look up a booking by its code (now includes your own bookings).</p>
+      </header>
+      <div class="panel">
+        <label class="field-label">Keyword or booking code</label>
+        <input id="m1-input" placeholder="e.g. beach, or BK-2026-00417">
+        <div class="btn-row">
+          <button onclick="kmpSearch()">Search descriptions <span class="tag">KMP</span></button>
+          <button onclick="rabinKarpSearch()">Search booking code <span class="tag">Rabin-Karp</span></button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m1-output" class="output">Run a search to see results here.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="m2" class="tab-content">
+      <header class="section-head">
+        <h1>Similar Places</h1>
+        <p>Search across every description at once, or find the two most alike destinations.</p>
+      </header>
+      <div class="panel">
+        <label class="field-label">Search term</label>
+        <input id="m2-input" placeholder="e.g. sea, temple, mountain">
+        <div class="btn-row">
+          <button onclick="suffixSearch()">Search all descriptions <span class="tag">Suffix Array</span></button>
+          <button onclick="similarPlaces()">Find most similar pair <span class="tag">LCP / Kasai</span></button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m2-output" class="output">Run a search to see results here.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="m3" class="tab-content">
+      <header class="section-head">
+        <h1>Spell-check &amp; Trip Planner</h1>
+        <p>Fix a misspelled destination name, or plan the cheapest short itinerary.</p>
+      </header>
+      <div class="panel-grid">
+        <div class="panel">
+          <label class="field-label">Misspelled destination name</label>
+          <input id="m3-input" placeholder="e.g. Santorni">
+          <div class="btn-row">
+            <button onclick="spellCheck()">Did you mean...? <span class="tag">Damerau-Levenshtein</span></button>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Suggestion</div>
+            <pre id="m3-output" class="output">Enter a name to check.</pre>
+          </div>
+        </div>
+        <div class="panel">
+          <label class="field-label">Trip planner</label>
+          <p class="hint">Best 3-stop itinerary starting from Goa.</p>
+          <div class="btn-row">
+            <button onclick="planTrip()">Plan trip <span class="tag">Bitmask DP</span></button>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Itinerary</div>
+            <pre id="m3-trip-output" class="output">Click plan trip to see the route.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="m4" class="tab-content">
+      <header class="section-head">
+        <h1>Transport Flow</h1>
+        <p>Analyse network capacity and assign travelers to available hotels.</p>
+      </header>
+      <div class="panel">
+        <div class="btn-row">
+          <button onclick="computeFlow()">Compute max flow <span class="tag">FF · EK · Dinic</span></button>
+          <button onclick="computeMinCut()">Find bottleneck <span class="tag">Min-Cut</span></button>
+          <button onclick="computeMatch()">Assign travelers <span class="tag">Bipartite Matching</span></button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m4-output" class="output">Run an analysis to see results here.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="m5" class="tab-content">
+      <header class="section-head">
+        <h1>Travel Constraints</h1>
+        <p>Check whether a set of trip rules can all be met, and pick hub cities that touch every popular connection.</p>
+      </header>
+      <div class="panel">
+        <div class="btn-row">
+          <button onclick="runNp('feasible')">Check Plan A (rules can work) <span class="tag">3-SAT</span></button>
+          <button onclick="runNp('conflict')">Check Plan B (rules conflict) <span class="tag">3-SAT</span></button>
+          <button onclick="runVertexCover()">Find key hub cities <span class="tag">Vertex Cover</span></button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m5-output" class="output">Pick a button to see the steps.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="m6" class="tab-content">
+      <header class="section-head">
+        <h1>Booking Analytics</h1>
+        <p>Ranking, sampling, big-number checks and parallel statistics on booking data.</p>
+      </header>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Rank destinations <span class="algo">Randomized QuickSort</span></h3>
+        <p class="hint">Sort the destinations by what the traveler cares about.</p>
+        <div class="btn-row">
+          <button onclick="runRank('popularity')">Most popular first</button>
+          <button onclick="runRank('price')">Cheapest hotel first</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-rank-output" class="output">Pick a ranking.</pre>
+        </div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Sample the booking stream <span class="algo">Reservoir Sampling</span></h3>
+        <p class="hint">Keep a fair random sample of bookings without storing them all.</p>
+        <div class="btn-row">
+          <button onclick="runReservoir('sample')">Sample 5 of 1000 bookings</button>
+          <button onclick="runReservoir('fairness')">Fairness check</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-reservoir-output" class="output">Pick an option.</pre>
+        </div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Is this number prime? <span class="algo">Miller-Rabin</span></h3>
+        <p class="hint">Try 1000000007 (prime), 561 (composite) or 9223372036854775783 (prime).</p>
+        <input id="m6-prime-input" placeholder="Enter a whole number">
+        <div class="btn-row">
+          <button onclick="runPrime()">Test number</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-prime-output" class="output">Enter a number to test.</pre>
+        </div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Cumulative bookings <span class="algo">Blelloch Scan</span></h3>
+        <p class="hint">Bookings per day: 3, 1, 7, 0, 4, 1, 6, 3. See the running totals built step by step.</p>
+        <div class="btn-row">
+          <button onclick="runScan()">Run scan</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-scan-output" class="output">Click run scan.</pre>
+        </div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">Travel-demand analysis <span class="algo">Parallel Reduce</span></h3>
+        <p class="hint">Adds up 1,000,000 simulated booking requests with many workers at once.</p>
+        <div class="btn-row">
+          <button onclick="runReduce()">Analyse demand</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-reduce-output" class="output">Click analyse demand.</pre>
+        </div>
+      </div>
+
+      <div class="panel stacked">
+        <h3 class="panel-title">How much do more processors help? <span class="algo">Brent's Theorem</span></h3>
+        <p class="hint">Enter how many data items there are (leave empty for 1000000).</p>
+        <input id="m6-brent-input" placeholder="e.g. 1000000">
+        <div class="btn-row">
+          <button onclick="runBrent()">Evaluate</button>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Result</div>
+          <pre id="m6-brent-output" class="output">Click evaluate.</pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
